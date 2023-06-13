@@ -12,3 +12,7 @@ data "aws_ami" "example" {
   name_regex       = "Centos-8-DevOps-Practice"
   owners           = ["997210232336"]
 }
+
+provider "aws" {
+  region = "us-east-1"
+}
