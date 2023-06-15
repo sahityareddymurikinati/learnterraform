@@ -9,6 +9,21 @@ resource "aws_instance" "web" {
   tags = {
     Name = var.name
   }
+
+  provisioner "remote-exec" {
+
+    connection {
+      type     = "ssh"
+      user     = "centos"
+      password = "DevOps321"
+      host     = self.public_ip
+    }
+
+    inline = [
+      "sudo labauto ansible",
+      "ansible-pull -i localhost, -U https://github.com/sahityareddymurikinati/roboshop-ansible.git -e env=dev -e role_name=${var.name}"
+    ]
+  }
 }
 
 data "aws_ami" "example" {
@@ -49,18 +64,7 @@ resource "aws_route53_record" "www" {
   records = [aws_instance.web.private_ip]
 }
 variable "name" {
-
 }
-provisioner "remote-exec" {
 
-  connection {
-    type     = "ssh"
-    user     = "centos"
-    password = "DevOps321"
-    host     = self.public_ip
-  }
-  inline = [
-    "sudo labauto ansible",
-    "ansible-pull -i localhost, -U https://github.com/sahityareddymurikinati/roboshop-ansible.git -e env=dev -e role_name=${var.name}"
-  ]
-}
+
+
