@@ -1,15 +1,16 @@
-provider "aws" {
-  region = "us-east-1"
-}
-
 resource "aws_instance" "web" {
-  ami           =  data.aws_ami.example.id
-  instance_type = "t3.small"
+  ami                    = data.aws_ami.example.id
+  instance_type          = "t3.small"
   vpc_security_group_ids = [aws_security_group.sg.id]
+
   tags = {
     Name = var.name
   }
 
+}
+
+resource "null_resource" "ansible" {
+  depends_on = [aws_instance.web, aws_route53_record.www]
   provisioner "remote-exec" {
 
     connection {
@@ -21,50 +22,47 @@ resource "aws_instance" "web" {
 
     inline = [
       "sudo labauto ansible",
-      "ansible-pull -i localhost, -U https://github.com/sahityareddymurikinati/roboshop-ansible.git -e env=dev -e role_name=${var.name}"
+      "ansible-pull -i localhost, -U https://github.com/sahityareddymurikinati/learnterraform.git main.yml -e env=dev -e role_name=${var.name}"
     ]
   }
 }
 
-data "aws_ami" "example" {
-  owners           = ["973714476881"]
-  most_recent      = true
-  name_regex       = "Centos-8-DevOps-Practice"
+resource "aws_route53_record" "www" {
+  zone_id = "Z055331734ICV430E01P7"
+  name    = "${var.name}-dev"
+  type    = "A"
+  ttl     = 30
+  records = [aws_instance.web.private_ip]
 }
+
+data "aws_ami" "example" {
+  owners      = ["973714476881"]
+  most_recent = true
+  name_regex  = "Centos-8-DevOps-Practice"
+}
+
 
 resource "aws_security_group" "sg" {
   name        = var.name
   description = "Allow TLS inbound traffic"
 
   ingress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
-    Name = "sample"
+    Name = var.name
   }
 }
 
-resource "aws_route53_record" "www" {
-  zone_id = "Z08488763JT3V0K51XZPF"
-  name    = "${var.name}-dev"
-  type    = "A"
-  ttl     = 30
-  records = [aws_instance.web.private_ip]
-}
-variable "name" {
-}
-
-
-
+variable "name" {}
